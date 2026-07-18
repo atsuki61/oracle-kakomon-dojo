@@ -120,6 +120,87 @@
     box-shadow:0 4px 0 #6c1c17, 0 10px 20px rgba(184,56,47,0.3);
   }
   .start-btn:active{ transform:translateY(2px); box-shadow:0 2px 0 #6c1c17; }
+  .start-btn:disabled{
+    opacity:0.4; cursor:not-allowed;
+    transform:none; box-shadow:0 4px 0 #6c1c17;
+  }
+
+  .setup-block{
+    margin-top:22px;
+    padding-top:18px;
+    border-top:1px solid var(--washi-dark);
+  }
+  .setup-head{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; margin-bottom:12px; flex-wrap:wrap;
+  }
+  .setup-title{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:0.95rem;
+    color:var(--indigo);
+    letter-spacing:0.08em;
+    margin:0;
+  }
+  .setup-count{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--sumi-soft);
+  }
+  .cat-toggle{
+    display:flex; align-items:center; gap:6px;
+    font-size:0.75rem;
+    color:var(--sumi-soft);
+  }
+  .cat-toggle button{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:0.72rem;
+    font-weight:700;
+    border:1px solid var(--indigo-mid);
+    background:transparent;
+    color:var(--indigo);
+    padding:3px 10px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .cat-toggle button.on{
+    background:var(--indigo);
+    color:var(--washi);
+  }
+  .cat-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px 12px;
+    max-height:220px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:4px 2px 6px;
+    margin-bottom:4px;
+  }
+  .cat-check{
+    display:flex; align-items:center; gap:7px;
+    font-size:0.8rem;
+    line-height:1.35;
+    color:var(--sumi);
+    cursor:pointer;
+    padding:3px 0;
+  }
+  .cat-check input{ accent-color:var(--indigo); flex-shrink:0; }
+  .cat-check .n{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    color:var(--sumi-soft);
+    margin-left:auto;
+  }
+  .opt-list{ display:flex; flex-direction:column; gap:8px; }
+  .opt-check{
+    display:flex; align-items:flex-start; gap:8px;
+    font-size:0.86rem;
+    line-height:1.5;
+    color:var(--sumi);
+    cursor:pointer;
+  }
+  .opt-check input{ margin-top:3px; accent-color:var(--indigo); flex-shrink:0; }
 
   .progress-wrap{ display:flex; align-items:center; gap:12px; margin-bottom:18px; }
   .progress-track{
@@ -388,6 +469,9 @@
     .mode-btn{ min-width:0; flex:1 1 45%; }
     .start-btn{ font-size:1.05rem; padding:14px; }
     .start-copy{ font-size:0.88rem; line-height:1.8; }
+    .cat-grid{ grid-template-columns:1fr; max-height:180px; }
+    .cat-check{ font-size:0.78rem; }
+    .opt-check{ font-size:0.82rem; }
 
     .score-big{ font-size:2rem; }
     .belt-badge{ font-size:1.15rem; padding:8px 20px; }
@@ -1004,14 +1088,24 @@ const QUESTIONS = [
 ];
 
 /* ===================== STATE ===================== */
+const ALL_CATS = [...new Set(QUESTIONS.map(q=>q.cat))];
+function catCounts(){
+  const m={};
+  QUESTIONS.forEach(q=>{ m[q.cat]=(m[q.cat]||0)+1; });
+  return m;
+}
 let state = {
   screen:"start",
   mode:"sequential",
+  selectedCats: ALL_CATS.slice(),
+  shuffleChoices: false,
+  showExplainEarly: false,
   order:[],
   idx:0,
   answers:{},
   answered:{},
-  selection:[]
+  selection:[],
+  choiceOrder:{} /* qid -> [original option keys in display order] */
 };
 
 /* ===================== HELPERS ===================== */
@@ -1054,9 +1148,47 @@ function beltFor(pct){
   if(pct>=40) return {name:"黄帯 — 復習が必要", bg:"#c9a24b", fg:"#231f1c"};
   return {name:"白帯 — 基礎から再確認", bg:"#f7f2e7", fg:"#231f1c"};
 }
+function filteredQuestions(){
+  const set = new Set(state.selectedCats);
+  return QUESTIONS.filter(q=>set.has(q.cat));
+}
+function buildOrder(){
+  const ids = filteredQuestions().map(q=>q.id);
+  return state.mode==="random" ? shuffle(ids) : ids;
+}
+function beginQuiz(order){
+  if(!order.length) return;
+  state.order = order;
+  state.idx=0; state.answers={}; state.answered={}; state.selection=[];
+  state.choiceOrder={};
+  state.screen="quiz";
+  renderQuiz();
+  window.scrollTo({top:0});
+}
+function optionsFor(q){
+  if(!state.shuffleChoices) return q.options;
+  if(!state.choiceOrder[q.id]){
+    state.choiceOrder[q.id] = shuffle(q.options.map(o=>o.k));
+  }
+  const byK = Object.fromEntries(q.options.map(o=>[o.k,o]));
+  return state.choiceOrder[q.id].map(k=>byK[k]);
+}
 
 /* ===================== RENDER: START ===================== */
 function renderStart(){
+  const counts = catCounts();
+  const selectedCount = filteredQuestions().length;
+  const allOn = state.selectedCats.length === ALL_CATS.length;
+
+  const catHtml = ALL_CATS.map(cat=>{
+    const checked = state.selectedCats.includes(cat) ? "checked" : "";
+    return `<label class="cat-check">
+      <input type="checkbox" data-cat="${esc(cat)}" ${checked}>
+      <span>${esc(cat)}</span>
+      <span class="n">${counts[cat]}</span>
+    </label>`;
+  }).join("");
+
   document.getElementById("app").innerHTML = `
     ${brandHtml()}
     <div class="card">
@@ -1065,13 +1197,56 @@ function renderStart(){
         1問ずつ回答すると即座に正誤判定と<b>全選択肢の個別解説</b>が表示される、道場稽古スタイルです。
       </p>
       <div class="mode-row">
-        <button class="mode-btn active" data-mode="sequential">順番に解く</button>
-        <button class="mode-btn" data-mode="random">ランダム出題</button>
+        <button class="mode-btn ${state.mode==="sequential"?"active":""}" data-mode="sequential">順番に解く</button>
+        <button class="mode-btn ${state.mode==="random"?"active":""}" data-mode="random">ランダム出題</button>
       </div>
-      <button class="start-btn" id="startBtn">道場に入る</button>
+
+      <div class="setup-block">
+        <div class="setup-head">
+          <p class="setup-title">分野を指定して出題</p>
+          <div class="cat-toggle">
+            <span>全項目</span>
+            <button type="button" id="catAllOn" class="${allOn?"on":""}">ON</button>
+            <button type="button" id="catAllOff" class="${!allOn && state.selectedCats.length===0?"on":""}">OFF</button>
+          </div>
+        </div>
+        <div class="cat-grid">${catHtml}</div>
+        <div class="setup-count">選択中: <b id="selCount">${selectedCount}</b> / ${QUESTIONS.length} 問</div>
+      </div>
+
+      <div class="setup-block">
+        <div class="setup-head">
+          <p class="setup-title">オプション項目</p>
+        </div>
+        <div class="opt-list">
+          <label class="opt-check">
+            <input type="checkbox" id="optShuffle" ${state.shuffleChoices?"checked":""}>
+            <span>選択肢をランダムに並べ替える</span>
+          </label>
+          <label class="opt-check">
+            <input type="checkbox" id="optExplainEarly" ${state.showExplainEarly?"checked":""}>
+            <span>最初から解説文を表示する</span>
+          </label>
+        </div>
+      </div>
+
+      <button class="start-btn" id="startBtn" ${selectedCount===0?"disabled":""}>道場に入る</button>
     </div>
-    <div class="footer-note">全40問 ・ 選択後は即採点 ・ 途中経過は保持されません</div>
+    <div class="footer-note">選択後は即採点 ・ 途中経過は保持されません</div>
   `;
+
+  const updateSelCount = ()=>{
+    const n = filteredQuestions().length;
+    const el = document.getElementById("selCount");
+    if(el) el.innerHTML = String(n);
+    const btn = document.getElementById("startBtn");
+    if(btn) btn.disabled = n===0;
+    const onBtn = document.getElementById("catAllOn");
+    const offBtn = document.getElementById("catAllOff");
+    if(onBtn) onBtn.classList.toggle("on", state.selectedCats.length===ALL_CATS.length);
+    if(offBtn) offBtn.classList.toggle("on", state.selectedCats.length===0);
+  };
+
   document.querySelectorAll(".mode-btn").forEach(b=>{
     b.onclick=()=>{
       document.querySelectorAll(".mode-btn").forEach(x=>x.classList.remove("active"));
@@ -1079,11 +1254,32 @@ function renderStart(){
       state.mode=b.dataset.mode;
     };
   });
+  document.querySelectorAll(".cat-check input").forEach(inp=>{
+    inp.onchange=()=>{
+      const cat = inp.dataset.cat;
+      if(inp.checked){
+        if(!state.selectedCats.includes(cat)) state.selectedCats.push(cat);
+      } else {
+        state.selectedCats = state.selectedCats.filter(c=>c!==cat);
+      }
+      updateSelCount();
+    };
+  });
+  document.getElementById("catAllOn").onclick=()=>{
+    state.selectedCats = ALL_CATS.slice();
+    document.querySelectorAll(".cat-check input").forEach(inp=>{ inp.checked=true; });
+    updateSelCount();
+  };
+  document.getElementById("catAllOff").onclick=()=>{
+    state.selectedCats = [];
+    document.querySelectorAll(".cat-check input").forEach(inp=>{ inp.checked=false; });
+    updateSelCount();
+  };
+  document.getElementById("optShuffle").onchange = e=>{ state.shuffleChoices = e.target.checked; };
+  document.getElementById("optExplainEarly").onchange = e=>{ state.showExplainEarly = e.target.checked; };
+
   document.getElementById("startBtn").onclick=()=>{
-    state.order = state.mode==="random" ? shuffle(QUESTIONS.map(q=>q.id)) : QUESTIONS.map(q=>q.id);
-    state.idx=0; state.answers={}; state.answered={}; state.selection=[];
-    state.screen="quiz";
-    renderQuiz();
+    beginQuiz(buildOrder());
   };
 }
 
@@ -1113,7 +1309,8 @@ function renderQuiz(){
   }
   let codeHtml = q.code ? `<pre class="qcode">${esc(q.code)}</pre>` : "";
 
-  const optionsHtml = q.options.map(o=>{
+  const showDetail = answered || state.showExplainEarly;
+  const optionsHtml = optionsFor(q).map(o=>{
     const isSel = sel.includes(o.k);
     const isCorrect = q.correct.includes(o.k);
     let cls="opt";
@@ -1124,9 +1321,9 @@ function renderQuiz(){
       else if(isSel) cls+=" wrong";
     }
     const inputType = q.type==="multi" ? "checkbox" : "radio";
-    /* 回答後: 各選択肢の直下に個別解説を表示(過去問道場スタイル) */
-    const expHtml = answered
-      ? `<span class="opt-exp"><b class="${isCorrect?'judge-ok':'judge-ng'}">${isCorrect?'○':'✕'}</b> ${esc(o.e)}</span>`
+    /* 回答後(または最初から解説ON): 各選択肢の直下に個別解説 */
+    const expHtml = showDetail
+      ? `<span class="opt-exp">${answered?`<b class="${isCorrect?'judge-ok':'judge-ng'}">${isCorrect?'○':'✕'}</b> `:""}${esc(o.e)}</span>`
       : "";
     return `<label class="${cls}" data-k="${o.k}">
       <input type="${inputType}" name="opt" ${isSel?"checked":""} ${answered?"disabled":""}>
@@ -1142,8 +1339,8 @@ function renderQuiz(){
     stampHtml = `<div class="stamp ${isOk?'ok':''}">${isOk?'合':'否'}</div>`;
   }
 
-  /* 冒頭ポイント解説(回答後のみ) */
-  const explainHtml = answered
+  /* 冒頭ポイント解説(回答後、または最初から解説ON) */
+  const explainHtml = showDetail
     ? `<div class="explain"><span class="exp-label">解説</span>${esc(q.explain)}</div>`
     : "";
 
@@ -1250,7 +1447,7 @@ function renderResult(){
       <div class="cat-list">${catHtml}</div>
       ${missHtml}
       <div class="actions" style="margin-top:24px;">
-        <button class="btn btn-primary" id="retryAllBtn">もう一度(全40問)</button>
+        <button class="btn btn-primary" id="retryAllBtn">もう一度</button>
         ${missed.length? `<button class="btn btn-ghost" id="retryMissBtn">間違えた問題だけ</button>`:""}
       </div>
     </div>
@@ -1258,25 +1455,18 @@ function renderResult(){
   `;
 
   document.getElementById("retryAllBtn").onclick=()=>{
-    state.order=QUESTIONS.map(q=>q.id);
-    if(state.mode==="random") state.order=shuffle(state.order);
-    state.idx=0; state.answers={}; state.answered={}; state.selection=[];
-    renderQuiz();
+    beginQuiz(buildOrder());
   };
   const rmb=document.getElementById("retryMissBtn");
   if(rmb){
     rmb.onclick=()=>{
-      state.order=missed.map(q=>q.id);
-      state.idx=0; state.answers={}; state.answered={}; state.selection=[];
-      renderQuiz();
+      beginQuiz(missed.map(q=>q.id));
     };
   }
   document.querySelectorAll(".miss-item").forEach(el=>{
     el.onclick=()=>{
       const id=parseInt(el.dataset.id);
-      state.order=[id];
-      state.idx=0; state.answers={}; state.answered={}; state.selection=[];
-      renderQuiz();
+      beginQuiz([id]);
     };
   });
 }
