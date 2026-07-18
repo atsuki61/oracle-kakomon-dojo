@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>過去問道場 — Oracle Bronze SQL基礎</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo:#1d2f4f;
+    --indigo-deep:#0f1c30;
+    --indigo-mid:#28436b;
+    --washi:#f7f2e7;
+    --washi-dark:#ece2c9;
+    --sumi:#231f1c;
+    --sumi-soft:#514a41;
+    --hanko:#b8382f;
+    --hanko-dark:#8c2b23;
+    --gold:#c9a24b;
+    --gold-soft:#e3c583;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(201,162,75,0.08), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(201,162,75,0.06), transparent 45%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 5px),
+      linear-gradient(180deg, var(--indigo-deep), var(--indigo) 60%, var(--indigo-deep));
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    color:var(--washi);
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 64px;
+  }
+  #app{width:100%; max-width:720px;}
+
+  .brand{ text-align:center; margin-bottom:28px; }
+  .brand .kanji{
+    font-family:'Shippori Mincho', serif;
+    font-weight:800;
+    font-size:2.4rem;
+    letter-spacing:0.08em;
+    background:linear-gradient(180deg, var(--gold-soft), var(--gold));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    margin:0;
+  }
+  .brand .sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.15em;
+    color:var(--gold-soft);
+    opacity:0.85;
+    margin-top:4px;
+  }
+  .brand hr{
+    border:none; height:1px;
+    width:120px; margin:14px auto 0;
+    background:linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .card{
+    background:
+      radial-gradient(circle at 90% 8%, rgba(184,56,47,0.05), transparent 35%),
+      var(--washi);
+    color:var(--sumi);
+    border-radius:6px;
+    padding:32px 30px;
+    position:relative;
+    box-shadow:0 18px 40px rgba(0,0,0,0.35), 0 2px 0 rgba(0,0,0,0.15);
+    border:1px solid var(--washi-dark);
+    overflow:hidden;
+  }
+  .card::before{
+    content:'';
+    position:absolute; inset:8px;
+    border:1px solid rgba(184,56,47,0.15);
+    pointer-events:none;
+    border-radius:3px;
+  }
+
+  .start-copy{ font-size:0.95rem; line-height:1.9; color:var(--sumi-soft); }
+  .start-copy b{ color:var(--sumi); }
+  .mode-row{ display:flex; gap:10px; margin:22px 0 8px; flex-wrap:wrap;}
+  .mode-btn{
+    flex:1; min-width:130px;
+    border:1.5px solid var(--indigo-mid);
+    background:transparent;
+    color:var(--indigo);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:700;
+    padding:12px 10px;
+    border-radius:5px;
+    cursor:pointer;
+    font-size:0.88rem;
+    transition:all .15s ease;
+  }
+  .mode-btn.active{
+    background:var(--indigo);
+    color:var(--washi);
+    box-shadow:0 3px 0 var(--indigo-deep);
+  }
+  .start-btn{
+    width:100%;
+    margin-top:22px;
+    padding:16px;
+    border:none;
+    border-radius:5px;
+    background:linear-gradient(180deg, var(--hanko), var(--hanko-dark));
+    color:#fff;
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:1.15rem;
+    letter-spacing:0.12em;
+    cursor:pointer;
+    box-shadow:0 4px 0 #6c1c17, 0 10px 20px rgba(184,56,47,0.3);
+  }
+  .start-btn:active{ transform:translateY(2px); box-shadow:0 2px 0 #6c1c17; }
+
+  .progress-wrap{ display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  .progress-track{
+    flex:1; height:8px; border-radius:4px;
+    background:rgba(255,255,255,0.12);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--gold-soft), var(--gold));
+    transition:width .3s ease;
+  }
+  .progress-num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.8rem;
+    color:var(--gold-soft);
+    white-space:nowrap;
+  }
+
+  .qcat{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.05em;
+    color:var(--hanko-dark);
+    background:rgba(184,56,47,0.08);
+    border:1px solid rgba(184,56,47,0.25);
+    padding:3px 9px;
+    border-radius:20px;
+    margin-bottom:12px;
+  }
+  .qtitle{
+    font-size:1.05rem;
+    font-weight:700;
+    line-height:1.75;
+    margin:0 0 14px;
+    white-space:pre-wrap;
+  }
+  .qtable{
+    width:100%;
+    border-collapse:collapse;
+    margin:0 0 16px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+  }
+  .qtable th,.qtable td{
+    border:1px solid var(--washi-dark);
+    padding:6px 10px;
+    text-align:center;
+  }
+  .qtable th{ background:rgba(29,47,79,0.06); color:var(--indigo);}
+  .qcode{
+    background:var(--sumi);
+    color:#d9e6d0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.82rem;
+    line-height:1.6;
+    padding:16px 18px;
+    border-radius:5px;
+    overflow-x:auto;
+    margin:0 0 18px;
+    white-space:pre;
+  }
+  .options{ display:flex; flex-direction:column; gap:10px; margin-bottom:22px;}
+  .opt{
+    display:flex; align-items:flex-start; gap:10px;
+    border:1.5px solid var(--washi-dark);
+    border-radius:5px;
+    padding:12px 14px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    font-size:0.92rem;
+    line-height:1.55;
+  }
+  .opt:hover{ border-color:var(--indigo-mid); background:rgba(29,47,79,0.03);}
+  .opt.selected{ border-color:var(--indigo); background:rgba(29,47,79,0.06);}
+  .opt input{ margin-top:3px; accent-color:var(--indigo); flex-shrink:0;}
+  .opt .k{ font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--indigo); margin-right:2px;}
+  .opt .opt-body{ flex:1; }
+
+  .opt.correct{ border-color:var(--gold); background:rgba(201,162,75,0.13); cursor:default;}
+  .opt.wrong{ border-color:var(--hanko); background:rgba(184,56,47,0.08); cursor:default;}
+  .opt.answered{ cursor:default; }
+  .opt.answered:hover{ border-color:var(--washi-dark); background:transparent; }
+  .opt.correct:hover{ border-color:var(--gold); background:rgba(201,162,75,0.13);}
+  .opt.wrong:hover{ border-color:var(--hanko); background:rgba(184,56,47,0.08);}
+
+  .opt-exp{
+    display:block;
+    margin-top:7px;
+    padding-top:7px;
+    border-top:1px dashed rgba(81,74,65,0.25);
+    font-size:0.8rem;
+    line-height:1.7;
+    color:var(--sumi-soft);
+    font-weight:400;
+  }
+  .opt.correct .opt-exp{ color:#7a6320; }
+  .opt-exp b.judge-ok{ color:#8a6d1f; }
+  .opt-exp b.judge-ng{ color:var(--hanko-dark); }
+
+  .actions{ display:flex; gap:10px; }
+  .btn{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+    padding:13px 20px;
+    border-radius:5px;
+    border:none;
+    cursor:pointer;
+  }
+  .btn-primary{
+    flex:1;
+    background:var(--indigo);
+    color:var(--washi);
+    box-shadow:0 3px 0 var(--indigo-deep);
+  }
+  .btn-primary:disabled{ opacity:0.35; cursor:not-allowed; box-shadow:none;}
+  .btn-primary:active:not(:disabled){ transform:translateY(2px); box-shadow:none;}
+  .btn-ghost{
+    background:transparent;
+    border:1.5px solid var(--washi-dark);
+    color:var(--sumi-soft);
+  }
+
+  .explain{
+    margin:0 0 18px;
+    padding:16px 16px 16px 18px;
+    background:rgba(29,47,79,0.045);
+    border-left:3px solid var(--indigo);
+    border-radius:0 5px 5px 0;
+    font-size:0.86rem;
+    line-height:1.85;
+    color:var(--sumi-soft);
+    white-space:pre-wrap;
+  }
+  .explain b{ color:var(--sumi); }
+  .explain .exp-label{
+    display:block;
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    color:var(--indigo);
+    margin-bottom:4px;
+    letter-spacing:0.08em;
+  }
+
+  .stamp{
+    position:absolute; top:22px; right:26px;
+    width:84px; height:84px;
+    border-radius:50%;
+    border:4px double var(--hanko);
+    color:var(--hanko);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Shippori Mincho', serif;
+    font-size:1.7rem; font-weight:800;
+    transform:rotate(-13deg) scale(2.2);
+    opacity:0;
+    animation:stampIn .4s cubic-bezier(.2,1.5,.4,1) forwards;
+    pointer-events:none;
+    z-index:2;
+  }
+  .stamp.ok{ border-color:var(--gold); color:var(--gold);}
+  @keyframes stampIn{
+    0%{ transform:rotate(-13deg) scale(2.4); opacity:0;}
+    55%{ opacity:1;}
+    100%{ transform:rotate(-13deg) scale(1); opacity:1;}
+  }
+
+  .belt-wrap{ text-align:center; margin:6px 0 24px;}
+  .belt-badge{
+    display:inline-block;
+    font-family:'Shippori Mincho', serif;
+    font-weight:800;
+    font-size:1.5rem;
+    padding:10px 28px;
+    border-radius:30px;
+    letter-spacing:0.1em;
+  }
+  .score-line{
+    text-align:center;
+    font-family:'JetBrains Mono', monospace;
+    color:var(--sumi-soft);
+    margin-bottom:6px;
+  }
+  .score-big{
+    text-align:center;
+    font-family:'Shippori Mincho', serif;
+    font-size:2.6rem;
+    font-weight:800;
+    color:var(--indigo);
+    margin:0 0 4px;
+  }
+  .cat-list{ margin-top:24px; }
+  .cat-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:9px 4px;
+    border-bottom:1px solid var(--washi-dark);
+    font-size:0.85rem;
+  }
+  .cat-row .bar{
+    flex:1; height:6px; margin:0 12px; border-radius:3px;
+    background:var(--washi-dark); position:relative; overflow:hidden;
+  }
+  .cat-row .bar i{
+    position:absolute; left:0; top:0; bottom:0;
+    background:var(--indigo); border-radius:3px;
+  }
+  .miss-list{ margin-top:22px; }
+  .miss-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 12px;
+    border:1px solid var(--washi-dark);
+    border-radius:5px;
+    margin-bottom:8px;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .miss-item:hover{ border-color:var(--hanko); }
+  .miss-item span.q{ font-family:'JetBrains Mono', monospace; color:var(--hanko-dark); font-weight:700;}
+
+  .footer-note{
+    text-align:center;
+    font-size:0.72rem;
+    color:rgba(247,242,231,0.4);
+    margin-top:22px;
+    letter-spacing:0.05em;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ===================== DATA =====================
+   各選択肢: k=記号, t=本文, e=個別解説
+   q.explain = 冒頭のポイント解説
+================================================== */
+const QUESTIONS = [
+{id:1, cat:"集合演算", type:"single",
+ text:"集合演算子の説明として、正しいものはどれですか。",
+ explain:"集合演算子は2つの問合せ結果を組み合わせる演算です。UNION(和・重複排除)、UNION ALL(和・重複あり)、INTERSECT(積=共通部分)、MINUS(差=1つ目−2つ目)の4つの動きを正確に区別できるかがポイントです。",
+ options:[
+  {k:"A", t:"UNIONは2つの問合せの結果を重複行も含めて表示する",
+   e:"UNIONは重複行を排除して表示します。重複を含めて表示するのはUNION ALLです。"},
+  {k:"B", t:"UNION ALLは2つの問合せの結果から重複行を排除して表示する",
+   e:"UNION ALLは重複行を排除しません。説明がUNIONと逆になっています。"},
+  {k:"C", t:"INTERSECTは2つの問合せの結果の共通する行を表示する",
+   e:"正しい。INTERSECTは両方の結果に共通して存在する行のみを表示します。"},
+  {k:"D", t:"MINUSは2つ目の問合せ結果から1つ目の問合せ結果にない行を表示する",
+   e:"MINUSは「1つ目の結果から2つ目に存在する行を除いたもの」です。説明の向きが逆です。"}
+ ], correct:["C"]},
+
+{id:2, cat:"DML/DDL分類", type:"multi",
+ text:"次の中からDMLでないSQLをすべて選びなさい(5件まで)",
+ explain:"SQLは大きくDML(データ操作)・DDL(データ定義)・TCL(トランザクション制御)などに分類されます。DMLはSELECT / INSERT / UPDATE / DELETEの4つと覚えるのが確実です。",
+ options:[
+  {k:"A", t:"CREATE TABLE",
+   e:"表を定義する命令なのでDDL(データ定義言語)です。DMLではありません。"},
+  {k:"B", t:"ROLLBACK",
+   e:"トランザクションを取り消す命令なのでTCL(トランザクション制御言語)です。DMLではありません。"},
+  {k:"C", t:"COMMIT",
+   e:"トランザクションを確定する命令なのでTCLです。DMLではありません。"},
+  {k:"D", t:"INSERT",
+   e:"データを追加するDMLです。「DMLでないもの」を選ぶ問題なので不正解の選択肢です。"},
+  {k:"E", t:"DELETE",
+   e:"データを削除するDMLです。こちらも「DMLでないもの」には該当しません。"}
+ ], correct:["A","B","C"]},
+
+{id:3, cat:"NULL処理", type:"single",
+ text:"EMPLOYEES表のCOMMISSION列がNULL値でない従業員を検索する条件として、正しいものはどれですか。",
+ explain:"NULLは「値が存在しない」状態であり、= や <> などの比較演算子では判定できません(結果が常に不明になる)。NULL判定は IS NULL / IS NOT NULL 専用構文を使います。",
+ options:[
+  {k:"A", t:"WHERE commission != NULL",
+   e:"!=でNULLと比較すると結果は常に不明(偽扱い)になり、1行もヒットしません。"},
+  {k:"B", t:"WHERE commission <> NULL",
+   e:"<>も同様にNULLとの比較は常に不明になるため使えません。"},
+  {k:"C", t:"WHERE commission IS NOT NULL",
+   e:"正しい。NULLでないことの判定は IS NOT NULL を使います。"},
+  {k:"D", t:"WHERE commission <> 0",
+   e:"0とNULLは別物です。この条件ではNULL行は除外されますが、0の行も除外されてしまい意図と異なります。"}
+ ], correct:["C"]},
+
+{id:4, cat:"実行順序/優先順位", type:"multi",
+ text:"次のSQL文の実行結果として表示される行の組合せとして、正しいものはどれですか(該当するものを全て選択)。\n※ 選択肢A〜Eはそれぞれ下表の行C・E・B・A・Dに対応します。",
+ table:{headers:["行","DEPT_ID","SALARY","COMMISSION","HIREDATE"],
+   rows:[["A","5","500000","2000000","01-10-01"],["B","1","350000","800000","11-04-01"],
+         ["C","4","200000","800000","10-04-01"],["D","3","500000","2000000","01-10-01"],
+         ["E","3","400000","1200000","02-12-01"]]},
+ code:"SELECT department_id, salary, commission, hiredate\nFROM employees\nWHERE (department_id = 3\nOR salary > 400000)\nAND commission <= 1200000\nOR hiredate > '2008-04-01';",
+ explain:"ANDはORより優先順位が高いため、条件は実質\n[(dept=3 OR salary>400000) AND commission<=1200000] OR [hiredate>'2008-04-01']\nという構造になります。前半のANDブロックか、hiredate条件のどちらかを満たせば表示されます。",
+ options:[
+  {k:"A", t:"行C (DEPT=4, SAL=200000, COMM=800000, 10-04-01)",
+   e:"該当する。前半は不成立(dept≠3かつsalary≤400000)ですが、hiredate 2010-04-01 > 2008-04-01 で後半条件を満たします。"},
+  {k:"B", t:"行E (DEPT=3, SAL=400000, COMM=1200000, 02-12-01)",
+   e:"該当する。dept=3で前半のOR成立、commission=1200000は「以下」に含まれるためAND全体が真になります。"},
+  {k:"C", t:"行B (DEPT=1, SAL=350000, COMM=800000, 11-04-01)",
+   e:"該当する。前半は不成立ですが、hiredate 2011-04-01 > 2008-04-01 で後半条件を満たします。"},
+  {k:"D", t:"行A (DEPT=5, SAL=500000, COMM=2000000, 01-10-01)",
+   e:"該当しない。salary>400000で前半のORは成立しますが、commission 2000000 が1200000を超えるためAND不成立。hiredate 2001年も条件を満たしません。"},
+  {k:"E", t:"行D (DEPT=3, SAL=500000, COMM=2000000, 01-10-01)",
+   e:"該当しない。dept=3ですがcommissionが1200000を超えるためAND不成立。hiredateも2001年で条件を満たしません。"}
+ ], correct:["A","B","C"]},
+
+{id:5, cat:"SELECT機能", type:"single",
+ text:"SELECT文の機能に関する説明として誤っているものを選びなさい",
+ explain:"SELECT文の3大機能は「射影(列を絞る)」「選択(行を絞る)」「結合(複数表をつなぐ)」です。射影と選択の説明を入れ替えた選択肢が定番の引っ掛けです。",
+ options:[
+  {k:"A", t:"結合とは複数の表から必要な表を求める機能である",
+   e:"正しい説明です。結合(JOIN)は複数の表を関連付けて1つの結果を得る機能です。"},
+  {k:"B", t:"射影とは、表内の列を選択する機能であり、各種条件を指定できる",
+   e:"誤り(=正解)。射影は列を絞るだけの機能で、条件指定は伴いません。「各種条件を指定できる」のは選択(行の絞り込み)の説明です。"},
+  {k:"C", t:"選択とは、表内の行を選択するための機能である",
+   e:"正しい説明です。WHERE句による行の絞り込みが選択です。"},
+  {k:"D", t:"SELECT文を使用して、射影、選択、結合などの実行ができる",
+   e:"正しい説明です。SELECT文1つで3機能すべてを組み合わせて実行できます。"}
+ ], correct:["B"]},
+
+{id:6, cat:"NOT IN", type:"single",
+ text:"従業員がALLEN,FORD,SALLY,TONYの4人だった場合。以下のSQL文を実行して出力されるのはどれですか。",
+ code:"SELECT EMPNO,ENAME\nFROM EMP\nWHERE ENAME NOT IN('FORD','SALLY');",
+ explain:"NOT INはリストに含まれる値を除外する条件です。IN('FORD','SALLY')の否定なので、FORDとSALLY以外が出力されます。",
+ options:[
+  {k:"A", t:"FORDとSALLY",
+   e:"NOT INは除外の条件なので、リストに含まれる2人はむしろ出力されません。INと逆に読んでしまうと選びがちな引っ掛けです。"},
+  {k:"B", t:"全員出力される",
+   e:"FORDとSALLYは条件により除外されるため、全員は出力されません。"},
+  {k:"C", t:"ALLENとTONY",
+   e:"正しい。FORDとSALLYを除外した残りのALLENとTONYが出力されます。"},
+  {k:"D", t:"だれの情報も出力されない",
+   e:"リストに含まれない2人(ALLEN, TONY)は条件を満たすため出力されます。"}
+ ], correct:["C"]},
+
+{id:7, cat:"NULL処理", type:"multi",
+ text:"月給(SAL列)の値が1600である行を抽出しない設定をすべて選びなさい(4件まで)",
+ explain:"「1600を抽出しない=1600の行が結果に含まれない条件」を選ぶ問題です。各条件に sal=1600 を代入して真偽を確かめるのが確実です。",
+ options:[
+  {k:"A", t:"WHERE sal IS NOT NULL",
+   e:"sal=1600はNULLではないので条件を満たし、抽出されてしまいます。"},
+  {k:"B", t:"WHERE sal <> 1600",
+   e:"正しい。1600と等しい行は条件を満たさないため抽出されません。"},
+  {k:"C", t:"WHERE sal NOT BETWEEN 1600 AND 2000",
+   e:"正しい。BETWEENは両端(1600と2000)を含むため、NOT BETWEENでは1600は範囲内として除外されます。"},
+  {k:"D", t:"WHERE sal >= 1600",
+   e:">=は1600自身を含むため、1600の行が抽出されてしまいます。"}
+ ], correct:["B","C"]},
+
+{id:8, cat:"文法規則", type:"single",
+ text:"SQL文を作成するときの規則に関する説明として誤っているものを選びなさい(キーワードとはSELECTなどあらかじめ定義されている予約語)",
+ explain:"SQLの記述ルールに関する知識問題です。キーワード(予約語)は大文字小文字を区別しない、短縮・分割不可、複数行記述可、優先順位の変更はカッコ、が基本ルールです。",
+ options:[
+  {k:"A", t:"キーワードの大文字と小文字は区別される",
+   e:"誤り(=正解)。SELECTもselectも同じ意味として扱われ、キーワードの大文字小文字は区別されません。※文字列リテラルの中身は区別されるので混同注意。"},
+  {k:"B", t:"キーワードは短縮したり、2行に分割したりすることはできない",
+   e:"正しい規則です。SELECTをSELなどと短縮したり、途中で改行を挟むことはできません。"},
+  {k:"C", t:"SQLは1行または複数行で記述できる",
+   e:"正しい規則です。読みやすさのため句ごとに改行するのが一般的です。"},
+  {k:"D", t:"算術演算子の優先順位を変更するためにはカッコを使用する",
+   e:"正しい規則です。(a+b)*c のようにカッコで優先順位を制御します。"}
+ ], correct:["A"]},
+
+{id:9, cat:"SELECT機能", type:"single",
+ text:"SELECT文の機能について、正しい組合せはどれですか。",
+ explain:"問5と同じテーマの言い換え問題です。選択=行、射影=列、結合=複数表。この対応を機械的に確認しましょう。",
+ options:[
+  {k:"A", t:"選択:表から特定の列を取得する",
+   e:"選択は「行」の取得です。列の取得は射影なので、説明が入れ替わっています。"},
+  {k:"B", t:"結合:複数の表のデータを関連付けて取得する",
+   e:"正しい。結合(JOIN)の説明として適切です。"},
+  {k:"C", t:"参照:他の表のデータを取得する",
+   e:"「参照」というSELECT文の機能分類は存在しません。"},
+  {k:"D", t:"射影(投影):表から特定の行を取得する",
+   e:"射影は「列」の取得です。行の取得は選択なので、説明が入れ替わっています。"}
+ ], correct:["B"]},
+
+{id:10, cat:"射影/選択", type:"single",
+ text:"「SELECT 列名1，列名2 FROM 表名；」を実行した際のSELECT文の演算機能を選びなさい。",
+ explain:"WHERE句がなく列だけを指定しているので、使われているのは列を絞る機能=射影のみです。",
+ options:[
+  {k:"A", t:"選択",
+   e:"選択は行を絞る機能です。この文にはWHERE句がないため行の絞り込みは行われていません。"},
+  {k:"B", t:"射影",
+   e:"正しい。列名を指定して列を絞り込む操作が射影です。"},
+  {k:"C", t:"取得",
+   e:"「取得」という演算機能の分類は存在しません。"},
+  {k:"D", t:"結合",
+   e:"表が1つしか登場しないため、結合は使われていません。"}
+ ], correct:["B"]},
+
+{id:11, cat:"DISTINCT", type:"single",
+ text:"商品を購入した顧客を把握するために、SALES表のCUST_ID列(顧客ID)の値の重複を排除して取り出すには、どのSQL文を実行しますか。",
+ explain:"DISTINCTは重複行を排除するキーワードで、置き場所はSELECTの直後と決まっています。位置を変えた誤答が並ぶ典型的な構文問題です。",
+ options:[
+  {k:"A", t:"SELECT DISTINCT cust_id FROM sales;",
+   e:"正しい。DISTINCTはSELECT直後に置きます。実データに適用すると顧客IDは1001・1002・1003の3件に重複排除されます。"},
+  {k:"B", t:"SELECT cust_id FROM DISTINCT sales;",
+   e:"FROM句の後(表名の前)にDISTINCTは置けません。構文エラーになります。"},
+  {k:"C", t:"SELECT cust_id DISTINCT FROM sales;",
+   e:"列名の後にDISTINCTは置けません。構文エラーになります。"},
+  {k:"D", t:"SELECT cust_id FROM sales;",
+   e:"構文としては正しいものの、重複が排除されず同じ顧客IDが複数行表示されてしまいます。"}
+ ], correct:["A"]},
+
+{id:12, cat:"IN条件", type:"multi",
+ text:"EMPLOYEES表のDEPARTMENT_IDには1〜5の値が登録されています。DEPARTMENT_IDが1,2,3の従業員がヒットする条件として正しいものはどれですか(全て選択、6件まで)。",
+ explain:"IN条件の言い換えパターンを問う問題です。IN(1,2,3)=「=1 OR =2 OR =3」であること、値の範囲が1〜5に限定されている前提を活かせるかがポイントです。",
+ options:[
+  {k:"A", t:"WHERE department_id IN (1, 2, 3)",
+   e:"正しい。INはリスト内のいずれかと一致すれば真になります。"},
+  {k:"B", t:"WHERE department_id = 1 AND department_id = 2 AND department_id = 3",
+   e:"1つの列が同時に1かつ2かつ3になることはあり得ないため、常に偽で1行もヒットしません。"},
+  {k:"C", t:"WHERE department_id = 1 OR 2 OR 3",
+   e:"「OR 2」のように数値だけを条件として書くことはできず、構文エラーになります。=は各条件に毎回必要です。"},
+  {k:"D", t:"WHERE department_id IN (4, 5)",
+   e:"4と5の従業員がヒットしてしまい、求める条件と逆です。"},
+  {k:"E", t:"WHERE department_id = 1 OR department_id = 2 OR department_id = 3",
+   e:"正しい。INを使わずORで書き下した形で、Aと完全に同義です。"},
+  {k:"F", t:"WHERE department_id NOT IN (4, 5)",
+   e:"正しい。値が1〜5に限られているため、4と5を除外すれば残りは1,2,3になります。※値の範囲が前提にない場合は使えない点に注意。"}
+ ], correct:["A","E","F"]},
+
+{id:13, cat:"NULL処理", type:"single",
+ text:"employees表のcomm列には[100,200,NULL,180]の値がそれぞれ登録されています。以下のSQL文を実行すると何行の列が検索されますか。",
+ code:"SELECT * FROM employees WHERE comm <> 200;",
+ explain:"NULLとの比較(NULL <> 200)は真にも偽にもならず「不明」となり、WHERE句では偽と同じ扱いで除外されます。<>200で消えるのは200だけではなくNULL行も、という点が最大のポイントです。",
+ options:[
+  {k:"A", t:"1",
+   e:"100と180の2行が条件を満たすため、1行ではありません。"},
+  {k:"B", t:"0",
+   e:"NULL以外で200でない行(100と180)はヒットするため、0行にはなりません。"},
+  {k:"C", t:"2",
+   e:"正しい。200は条件不一致、NULLは比較結果が不明で除外。残る100と180の2行が検索されます。"},
+  {k:"D", t:"3",
+   e:"NULL行も含めて3行と考えるのが典型的な誤答です。NULLは <> 200 では取り出せません。"}
+ ], correct:["C"]},
+
+{id:14, cat:"NULL演算", type:"single",
+ text:"月給(SAL列)と歩合給(COMM列)から年収(12*SAL+COMM)を検索したところ、結果が表示されない社員がいた。原因として考えられるものを選びなさい",
+ explain:"NULLを含む算術演算の結果は必ずNULLになります(12*SAL+NULL=NULL)。0とNULLの違いを演算面から問う問題です。※実務ではNVL(COMM,0)で回避します。",
+ options:[
+  {k:"A", t:"COMM列の値がNULLの社員がいる",
+   e:"正しい。COMMがNULLだと 12*SAL+COMM 全体がNULLになり、年収が表示されません。"},
+  {k:"B", t:"SAL列の値が0の社員がいる",
+   e:"0は正常な数値なので計算結果(0+COMM)はきちんと表示されます。"},
+  {k:"C", t:"SAL列の値、COMMの値が共に0の社員がいる",
+   e:"両方0でも計算結果は0として表示されます。表示されない原因にはなりません。"},
+  {k:"D", t:"COMM列の値が0の社員がいる",
+   e:"0はNULLと違い演算可能です。12*SAL+0 が普通に表示されます。"}
+ ], correct:["A"]},
+
+{id:15, cat:"LIKE検索", type:"single",
+ text:"employees表の住所(address列)から藤沢市に住んでいる社員数を取得したい。最も適切な文を選びなさい",
+ explain:"住所は「神奈川県藤沢市〇〇」のように前後に文字が付く形式が普通なので、部分一致 '%藤沢市%' を使うのが最も適切です。%は0文字以上の任意文字列を表します。",
+ options:[
+  {k:"A", t:"SELECT COUNT(*) FROM employees WHERE address LIKE '藤沢市';",
+   e:"%がないため実質完全一致になり、「藤沢市」ちょうどの住所しかヒットしません。"},
+  {k:"B", t:"SELECT COUNT(*) FROM employees WHERE address = '%藤沢市%';",
+   e:"=ではワイルドカードが機能せず、「%藤沢市%」という文字そのものとの一致になってしまいます。"},
+  {k:"C", t:"SELECT COUNT(*) FROM employees WHERE address LIKE '%藤沢市%';",
+   e:"正しい。住所のどこかに「藤沢市」が含まれていればヒットする部分一致です。"},
+  {k:"D", t:"SELECT COUNT(*) FROM employees WHERE address LIKE '藤沢市%';",
+   e:"前方一致のため「神奈川県藤沢市…」のように都道府県から始まる住所が漏れてしまいます。"}
+ ], correct:["C"]},
+
+{id:16, cat:"文字列/大小文字", type:"multi",
+ text:"PRODUCTS表(PROD_NAME列はNOT NULL・VARCHAR2(50))から製品名が「Lantern」の行を検索する条件として正しいものはどれですか(5件まで)。",
+ explain:"文字列リテラルはシングルクォート(')で囲み、中身の大文字小文字は区別されます。二重引用符(\")は列別名など識別子用でリテラルには使えません。",
+ options:[
+  {k:"A", t:"WHERE prod_name = 'lantern'",
+   e:"すべて小文字のため、実データ「Lantern」とは一致しません。"},
+  {k:"B", t:"WHERE prod_name = \"lantern\"",
+   e:"二重引用符は識別子(列名など)用です。文字列リテラルには使えずエラーになります。"},
+  {k:"C", t:"WHERE prod_name = 'Lantern'",
+   e:"正しい。シングルクォート+大文字小文字が完全一致しています。"},
+  {k:"D", t:"WHERE prod_name = 'LANTERN'",
+   e:"すべて大文字のため一致しません。文字列の中身は大文字小文字が区別されます。"},
+  {k:"E", t:"WHERE prod_name = \"LANTERN\"",
+   e:"二重引用符のためエラー。大文字小文字以前に構文として不正です。"}
+ ], correct:["C"]},
+
+{id:17, cat:"RDB基礎", type:"single",
+ text:"リレーショナルデータベースのデータの格納形式を選びなさい",
+ explain:"データベースのデータモデルには階層型・ネットワーク型・リレーショナル型があります。リレーショナル型は行と列からなる2次元の表でデータを管理します。",
+ options:[
+  {k:"A", t:"2次元の表構造",
+   e:"正しい。リレーショナルデータベースは行(レコード)と列(カラム)の2次元表でデータを管理します。"},
+  {k:"B", t:"ネットワーク構造",
+   e:"網の目状にレコードをつなぐネットワーク型データベースの形式です。"},
+  {k:"C", t:"木構造",
+   e:"木構造(ツリー)は階層型データベースの形式です。"},
+  {k:"D", t:"階層型データ構造",
+   e:"親子関係でデータを管理する階層型データベースの形式です。"}
+ ], correct:["A"]},
+
+{id:18, cat:"列別名", type:"single",
+ text:"列別名の指定としてエラーになるものを選びなさい",
+ explain:"列別名はASの有無どちらでも指定できますが、スペースを含む別名は二重引用符(\")で囲む必要があります。囲まずにスペースを入れると2つの単語と解釈されエラーです。",
+ options:[
+  {k:"A", t:"SELECT ename employeename FROM employees;",
+   e:"AS省略形の正しい書き方です。スペースを含まない別名なら引用符は不要です。"},
+  {k:"B", t:"SELECT ename employee name FROM employees;",
+   e:"エラー(=正解)。別名にスペースを含める場合は \"employee name\" のように二重引用符で囲む必要があります。"},
+  {k:"C", t:"SELECT ename AS employeename FROM employees;",
+   e:"ASを明示した正しい書き方です。"},
+  {k:"D", t:"SELECT ename 'employeename' FROM employees;",
+   e:"この出題では許容とされています(MySQL等では有効)。※Oracleの正式な囲み文字は二重引用符である点は覚えておきましょう。"}
+ ], correct:["B"]},
+
+{id:19, cat:"NULL処理", type:"single",
+ text:"SCOTTの歩合給(COMM列)は設定されていない(NULL)である。このときSCOTTの行が抽出される条件を選びなさい",
+ explain:"NULL=「値が未設定」であり、0や空白文字とは別物です。NULLの行を取り出せるのは IS NULL だけです。",
+ options:[
+  {k:"A", t:"WHERE comm = 0",
+   e:"0は「0という値が入っている」状態で、NULL(未設定)とは異なるためヒットしません。"},
+  {k:"B", t:"WHERE comm = NULL",
+   e:"=でNULLと比較すると常に不明(偽扱い)になり、1行もヒットしません。"},
+  {k:"C", t:"WHERE comm IS NULL",
+   e:"正しい。NULLの行を判定できる唯一の書き方です。"},
+  {k:"D", t:"WHERE comm = ' '",
+   e:"空白文字は「空白という文字が入っている」状態で、NULLとは別物です。"}
+ ], correct:["C"]},
+
+{id:20, cat:"ソート", type:"single",
+ text:"DEPTNO列、SAL列、およびENAME列のデータをすべて降順にソートするには、（　）とします。",
+ explain:"ORDER BY句のASC/DESCは列ごとに個別指定します。まとめて指定する構文は存在しないため、全列降順なら各列の後ろにDESCを付けます。",
+ options:[
+  {k:"A", t:"ORDER BY DESC deptno, DESC sal, DESC ename",
+   e:"DESCは列名の前ではなく後ろに置きます。構文エラーです。"},
+  {k:"B", t:"ORDER BY (deptno, sal, ename) DESC",
+   e:"列をカッコでまとめてDESCを1回で適用する構文は存在しません。"},
+  {k:"C", t:"ORDER BY DESC (deptno, sal, ename)",
+   e:"同様に不正な構文です。DESCを関数のように使うことはできません。"},
+  {k:"D", t:"ORDER BY deptno DESC, sal DESC, ename DESC",
+   e:"正しい。各列の直後にDESCを個別指定する正しい構文です。"}
+ ], correct:["D"]},
+
+{id:21, cat:"LIKE検索", type:"single",
+ text:"id列の3文字目が「M」である行を検索するための条件を選びなさい",
+ explain:"LIKEのワイルドカードは %(0文字以上の任意文字列)と _(任意の1文字)の2種類。「3文字目がM」は _を2つ置いてから M、その後は%で '__M%' と表します。",
+ options:[
+  {k:"A", t:"WHERE id = '__M%'",
+   e:"=ではワイルドカードが機能せず、「__M%」という文字そのものとの一致になってしまいます。"},
+  {k:"B", t:"WHERE id LIKE '  M%'  (Mの前に半角スペース2つ)",
+   e:"スペースはワイルドカードではなく実際の空白文字を意味します。「先頭2文字が空白」という条件になってしまいます。"},
+  {k:"C", t:"WHERE id LIKE '%M%'",
+   e:"位置を指定できないため、何文字目であってもMを含めば一致してしまいます。"},
+  {k:"D", t:"WHERE id LIKE '__M%'",
+   e:"正しい。_(任意の1文字)を2つ置くことで「3文字目がM」を正確に表現できます。"}
+ ], correct:["D"]},
+
+{id:22, cat:"DESCRIBE", type:"multi",
+ text:"OracleのSQLで表の構造を表示するためのコマンドとして、正しいものはどれですか(5件まで)。",
+ explain:"表の列名・NULL許可・データ型を表示するのはDESCRIBEコマンド(省略形DESC)です。似たDで始まるキーワードとの区別を問うています。",
+ options:[
+  {k:"A", t:"DISTINCT",
+   e:"重複行を排除するキーワードです。表構造の表示とは無関係です。"},
+  {k:"B", t:"DESCRIBE",
+   e:"正しい。表構造を表示するコマンドの正式名です。"},
+  {k:"C", t:"DEFAULT",
+   e:"列の既定値を設定するキーワードです。"},
+  {k:"D", t:"DECODE",
+   e:"値に応じて出力を切り替えるOracleの関数です。"},
+  {k:"E", t:"DESC",
+   e:"正しい。DESCRIBEの省略形です。※ORDER BY句の降順指定DESCとは別物なので文脈で判断しましょう。"}
+ ], correct:["B","E"]},
+
+{id:23, cat:"CROSS JOIN", type:"single",
+ text:"次の問い合わせの実行結果として、正しいものはどれですか。",
+ code:"SELECT d.department_name, e.employee_name\nFROM departments d CROSS JOIN employees e;",
+ explain:"CROSS JOINは結合条件を持たない直積結合で、2表の全行の組み合わせ(m行×n行=m×n行)を返します。条件がなくてもエラーにはなりません。",
+ options:[
+  {k:"A", t:"2つの表に格納されているデータの全ての組合せが表示される",
+   e:"正しい。直積(デカルト積)の説明です。departmentsが4行・employeesが10行なら40行になります。"},
+  {k:"B", t:"2つの表に共通して存在する列に基づいて自動的に結合される",
+   e:"これはNATURAL JOIN(自然結合)の説明です。"},
+  {k:"C", t:"2つの表に格納されている全てのデータが表示される",
+   e:"「全データを並べて表示」ではなく「全組み合わせ」です。似ていますが意味が異なります。"},
+  {k:"D", t:"結合条件を指定していないので、エラーとなる",
+   e:"CROSS JOINはそもそも結合条件を取らない構文なのでエラーになりません。"}
+ ], correct:["A"]},
+
+{id:24, cat:"SELECT機能", type:"single",
+ text:"以下のSELECT文が使う機能を選びなさい",
+ code:"SELECT empno,ename FROM employees WHERE deptno='30';",
+ explain:"列の指定(empno,ename)=射影、WHERE句による行の絞り込み=選択。表は1つなので結合は使われていません。",
+ options:[
+  {k:"A", t:"選択、結合",
+   e:"列を絞っているので射影も使われています。また表が1つなので結合はありません。"},
+  {k:"B", t:"射影、選択、結合",
+   e:"射影と選択は正しいですが、表が1つのため結合は使われていません。"},
+  {k:"C", t:"射影、結合",
+   e:"WHERE句があるので選択も使われています。結合はありません。"},
+  {k:"D", t:"射影、選択",
+   e:"正しい。列の絞り込み(射影)とWHERE句(選択)の2機能が使われています。"}
+ ], correct:["D"]},
+
+{id:25, cat:"文字列/大小文字", type:"single",
+ text:"職種(JOB)がSALESMANのデータが入力された従業員表(EMP)で以下のSQL文を実行したところ、データが1件も検索されませんでした。考えられる原因を選びなさい。",
+ code:"SELECT ENAME,JOB,DEPTNO FROM EMP WHERE JOB='Salesman';",
+ explain:"キーワードは大文字小文字を区別しませんが、文字列リテラルの中身は厳密に区別されます。実データ'SALESMAN'と条件'Salesman'は別の文字列として扱われます。",
+ options:[
+  {k:"A", t:"文字列検索では大文字/小文字の区別があるため",
+   e:"正しい。'SALESMAN'≠'Salesman'なので1件もヒットしません。UPPER(JOB)='SALESMAN'のように揃えれば検索できます。"},
+  {k:"B", t:"'(シングルコーテーション)が使用されているため",
+   e:"文字列リテラルをシングルクォートで囲むのは正しい使い方です。"},
+  {k:"C", t:"条件式の「=」を「like」にしなかったため",
+   e:"完全一致の検索なら=で問題ありません。LIKEは部分一致に使うものです。"},
+  {k:"D", t:"実行したSQL文自体が間違っている",
+   e:"構文としては正しいSQL文です。エラーではなく「0件ヒット」になっているのがその証拠です。"}
+ ], correct:["A"]},
+
+{id:26, cat:"ソート", type:"multi",
+ text:"部門番号(deptno列)の昇順、さらに社員番号(empno列)の昇順にソートする。正しいSELECT文をすべて選びなさい(4件まで)",
+ explain:"ORDER BYには列名のほか「SELECT句で何番目か」の位置番号も指定できます。昇順(ASC)はデフォルトなので省略可能です。列の指定順序が要件どおりかを確認しましょう。",
+ options:[
+  {k:"A", t:"SELECT ename FROM employees ORDER BY deptno,empno;",
+   e:"正しい。ORDER BY句にはSELECT句にない列も指定できます(問39-Cの知識)。deptno→empnoの順で正しい並びです。"},
+  {k:"B", t:"SELECT deptno,empno,ename FROM employees ORDER BY 1,empno;",
+   e:"正しい。「1」はSELECT句の1番目=deptnoを指す位置指定です。deptno→empnoの順になります。"},
+  {k:"C", t:"SELECT deptno,empno,ename FROM employees ORDER BY 1,2;",
+   e:"正しい。1=deptno、2=empnoの位置指定で、要件どおりの並びです。"},
+  {k:"D", t:"SELECT deptno,empno,ename FROM employees ORDER BY empno ASC ,deptno ASC;",
+   e:"empnoが先に指定されており、優先順位が要件(deptnoが先)と逆になっています。"}
+ ], correct:["A","B","C"]},
+
+{id:27, cat:"全列取得", type:"multi",
+ text:"DEPARTMENTS表(列はDEPARTMENT_ID・DEPARTMENT_NAME・MANAGER_IDの3列)から全ての列の値を表示するためには、どの問い合わせを実行しますか(5件まで)。",
+ explain:"全列取得の方法は「*(アスタリスク)」または「全列名を明示的に列挙」の2つです。表が3列と確定しているため、3列すべてを列挙した選択肢も正解になります。",
+ options:[
+  {k:"A", t:"SELECT ALL FROM departments;",
+   e:"ALLは重複を許可する指定であり、列リストの代わりにはなりません。列名がなく構文エラーです。"},
+  {k:"B", t:"SELECT * FROM departments;",
+   e:"正しい。*は全列を意味する最も一般的な書き方です。"},
+  {k:"C", t:"SELECT department_id, department_name, manager_id FROM departments;",
+   e:"正しい。表の3列すべてを明示的に列挙しているため、結果は*と同じになります。"},
+  {k:"D", t:"SELECT department_id, manager_id FROM departments;",
+   e:"department_name列が抜けており、全列にはなりません。"},
+  {k:"E", t:"SELECT DISTINCT FROM departments;",
+   e:"DISTINCTの後に列名がなく構文エラーです。"}
+ ], correct:["B","C"]},
+
+{id:28, cat:"BETWEEN", type:"multi",
+ text:"EMPLOYEES表のSALARY列の値が300,000以上600,000以下の行を表示するためには、どの問い合わせを実行しますか(5件まで)。",
+ explain:"BETWEEN a AND b は「a以上b以下」で、必ず小さい値→大きい値の順に書きます。同じ範囲は >= と <= のAND条件でも表現できます。",
+ options:[
+  {k:"A", t:"WHERE salary BETWEEN 600000 AND 300000",
+   e:"大きい値→小さい値の順は「600000以上かつ300000以下」となり、該当する値が存在せず0件になります。"},
+  {k:"B", t:"WHERE salary BETWEEN 300000 AND 600000",
+   e:"正しい。300000以上600000以下(両端を含む)の正しい書き方です。"},
+  {k:"C", t:"WHERE salary >= 300000 OR salary <= 600000",
+   e:"ORのため「300000以上」か「600000以下」のどちらかを満たせばよく、実質すべての行が該当してしまいます。"},
+  {k:"D", t:"WHERE salary >= 300000 AND salary <= 600000",
+   e:"正しい。BETWEENを使わない同義の書き方です。"},
+  {k:"E", t:"WHERE 300000 <= salary <= 600000",
+   e:"数学のような連鎖比較はSQLでは書けません。構文エラーです。"}
+ ], correct:["B","D"]},
+
+{id:29, cat:"複合条件", type:"multi",
+ text:"ADAMSの職種(job列)はCLERK、給与(sal列)は3000である。ADAMSの行が検索される条件をすべて選びなさい(5件まで)",
+ explain:"job='CLERK'(大文字)、sal=3000、ename='ADAMS' を各条件に代入して真偽判定する問題です。大文字小文字・BETWEENの両端・LIKEのパターンと、引っ掛け要素が凝縮されています。",
+ options:[
+  {k:"A", t:"WHERE job = 'clerk' AND sal = 3000",
+   e:"'clerk'が小文字のため実データ'CLERK'と一致せず、AND全体が偽になります。"},
+  {k:"B", t:"WHERE job not IN('SALESMAN','ACCOUNT')",
+   e:"正しい。CLERKはリストに含まれないため、NOT INの条件が真になります。"},
+  {k:"C", t:"WHERE sal NOT BETWEEN 2000 AND 3000",
+   e:"BETWEENは両端を含むためsal=3000は範囲内。そのNOT条件は偽となり、検索されません。"},
+  {k:"D", t:"WHERE ename NOT LIKE '%DAM'",
+   e:"正しい。'%DAM'は「末尾がDAMで終わる」パターン。'ADAMS'は末尾がDAMSなので一致せず、NOT LIKEが真になります。"},
+  {k:"E", t:"WHERE job = 'CLERK' AND sal = 3000",
+   e:"正しい。大文字小文字も値も完全一致しています。"}
+ ], correct:["B","D","E"]},
+
+{id:30, cat:"集約関数", type:"single",
+ text:"次の問い合わせの実行結果として、正しいものはどれですか。",
+ code:"SELECT employee_id, employee_name, salary\nFROM employees\nWHERE AVG(salary) > 350000;",
+ explain:"WHERE句は行を1行ずつ評価する段階で実行されるため、行の集まりを前提とする集約関数(AVG・SUM・COUNTなど)は使えません。集約結果で絞るならHAVING句を使います。",
+ options:[
+  {k:"A", t:"正常に実行されるが何も表示されない",
+   e:"0件表示ではなく、実行自体がエラーになります。"},
+  {k:"B", t:"SALARY列がNULLの従業員を除いた平均給与350000より給与の多い従業員が取り出される",
+   e:"AVGがNULLを除外するのは事実ですが、そもそもWHERE句で集約関数が使えないため実行されません。"},
+  {k:"C", t:"エラーとなる",
+   e:"正しい。「グループ関数はここでは使用できません(ORA-00934)」というエラーになります。"},
+  {k:"D", t:"全従業員の平均給与350000より給与の多い従業員のデータが取り出される",
+   e:"意図としてはこの動きを狙ったSQLですが、WHERE句に集約関数は書けないため実行できません。サブクエリで書き直す必要があります。"}
+ ], correct:["C"]},
+
+{id:31, cat:"NULL処理", type:"single",
+ text:"EMPLOYEES表のYOMI列に値が入ってない行を検索しようと以下のSQL文を実行しましたが、検索結果は1件も表示されませんでした。該当のデータは3件あります。WHERE句をどのように書き換えれば、希望のデータが検索されるでしょうか。",
+ code:"SELECT employee_name, yomi\nFROM employees\nWHERE yomi = '';",
+ explain:"「値が入っていない」=NULLであり、空文字('')とは別概念です(※Oracleでは''はNULL扱いされますが、=では比較できない点は同じ)。NULL行の検索はIS NULL一択です。",
+ options:[
+  {k:"A", t:"WHERE yomi IS NOT NULL;",
+   e:"「値が入っている行」を検索する条件で、求めるものと真逆です。"},
+  {k:"B", t:"WHERE yomi IS NULL;",
+   e:"正しい。値が入っていない(NULL)行を検索できる唯一の書き方です。"},
+  {k:"C", t:"WHERE yomi = \"\";",
+   e:"二重引用符は文字列リテラルに使えないため構文エラーです。"},
+  {k:"D", t:"WHERE employee_name IS NULL;",
+   e:"IS NULLの使い方は正しいものの、検索対象の列がyomiではなくemployee_nameになっています。"}
+ ], correct:["B"]},
+
+{id:32, cat:"常に偽", type:"single",
+ text:"以下のSELECT文の実行結果の説明として正しいものを選びなさい",
+ code:"SELECT empno,ename FROM employees WHERE 1 = 3;",
+ explain:"WHERE句には列を含まない定数同士の条件も書けます。1=3は常に偽なので、全行が条件を満たさず結果は0件になります(逆に1=1なら全件)。",
+ options:[
+  {k:"A", t:"employees表の1行目から3行目までのデータが検索される",
+   e:"WHERE 1=3は行番号の範囲指定ではありません。行番号を扱うのはROWNUMなど別の仕組みです。"},
+  {k:"B", t:"employees表からempno列とename列の値が等しい行が検索される",
+   e:"1と3は列名ではなく数値リテラルです。列同士の比較ではありません。"},
+  {k:"C", t:"データは1件も出力されない",
+   e:"正しい。1=3は常に偽なので、どの行も条件を満たさず0件になります。"},
+  {k:"D", t:"employees表からすべての行が検索される",
+   e:"全行検索になるのはWHERE 1=1のような常に真の条件の場合です。"}
+ ], correct:["C"]},
+
+{id:33, cat:"列別名", type:"single",
+ text:"次のSQL文はエラーとなります。エラーの原因は何ですか。",
+ code:"SELECT employee_id ID, employee_name NAME, salary * 12 sal\nFROM employees\nWHERE sal >= 300000 AND department_id IN (1, 2, 3);",
+ explain:"句の評価順序は FROM→WHERE→GROUP BY→HAVING→SELECT→ORDER BY。WHERE句の評価時点ではSELECT句がまだ処理されておらず、そこで付けた列別名(sal)は存在しないためエラーになります。※ORDER BY句なら別名を使えます。",
+ options:[
+  {k:"A", t:"WHERE句に列別名は指定できないから",
+   e:"正しい。WHERE句はSELECT句より先に評価されるため、別名salはまだ定義されておらず参照できません。"},
+  {k:"B", t:"算術式に列別名は指定できないから",
+   e:"salary * 12 sal のように算術式にも別名は問題なく付けられます。"},
+  {k:"C", t:"列別名は必ず二重引用符(\")で囲まなければならないから",
+   e:"二重引用符が必要なのはスペースや小文字を保持したい場合のみです。通常は不要です。"},
+  {k:"D", t:"WHERE句には条件を1つしか記述できないから",
+   e:"ANDやORでいくつでも条件をつなげられます。"}
+ ], correct:["A"]},
+
+{id:34, cat:"RDB基礎", type:"multi",
+ text:"次の説明の中で誤っているものをすべて選びなさい(5件まで)",
+ explain:"リレーショナルデータベースの特徴を問う知識問題です。「複数の表を持てる」「物理配置を意識せず使える」「SQLは多くのRDBMSで共通」の3点を押さえていれば判定できます。",
+ options:[
+  {k:"A", t:"リレーショナルデータベースには、ただ1つだけ表を格納できる",
+   e:"誤り(=正解)。1つのデータベースには複数の表を格納できます。"},
+  {k:"B", t:"リレーショナルデータベースは、階層型やネットワーク型データベースと同様に、データへのアクセスルートを指定する必要があるため物理的なデータの配置を知る必要がある",
+   e:"誤り(=正解)。物理的な配置を意識せずSQLだけで操作できるのがリレーショナル型の大きな利点です。"},
+  {k:"C", t:"リレーショナルデータベースの中で、SQL言語を使用できるのはOracleだけである",
+   e:"誤り(=正解)。SQLは標準化された言語で、MySQL・PostgreSQL・SQL Serverなど多くのRDBMSで使えます。"},
+  {k:"D", t:"Oracleは、リレーショナルデータベース管理システムである",
+   e:"正しい記述です。OracleはRDBMS(リレーショナルデータベース管理システム)の代表例です。"},
+  {k:"E", t:"リレーショナルデータベースでは、情報を管理するために2次元の表を使用する",
+   e:"正しい記述です。行と列の2次元表でデータを管理します。"}
+ ], correct:["A","B","C"]},
+
+{id:35, cat:"全列取得", type:"multi",
+ text:"表からすべての列を検索する方法をすべて選びなさい(4件まで)",
+ explain:"全列検索は「*」か「全列名の列挙」の2通り。DISTINCTとALLは行の重複に関するキーワードで、列の範囲指定とは無関係です。",
+ options:[
+  {k:"A", t:"SELECT句でDISTINCTを指定する",
+   e:"DISTINCTは重複行を排除する指定で、全列取得の方法ではありません。"},
+  {k:"B", t:"SELECT句でアスタリスク「＊」を指定する",
+   e:"正しい。*は全列を表す記号です。"},
+  {k:"C", t:"SELECT句でALLを指定する",
+   e:"ALLは重複行を許可する指定(デフォルト動作)で、列の範囲とは無関係です。"},
+  {k:"D", t:"SELECT句ですべての列名を , 区切りで記述する",
+   e:"正しい。全列を明示的に列挙すれば結果は*と同じになります。"}
+ ], correct:["B","D"]},
+
+{id:36, cat:"ER図", type:"single",
+ text:"E-Rモデルの主要コンポーネントでないものを選びなさい",
+ explain:"E-Rモデルの3要素は「エンティティ(実体)」「属性」「リレーションシップ(関連)」です。「表」は概念設計の後、論理設計以降で登場する実装レベルの概念です。",
+ options:[
+  {k:"A", t:"リレーションシップ",
+   e:"エンティティ同士の関連を表すE-Rモデルの構成要素です。"},
+  {k:"B", t:"属性",
+   e:"エンティティが持つ性質(名前・価格など)を表す構成要素です。"},
+  {k:"C", t:"表",
+   e:"正しい(=E-Rモデルの要素ではない)。表はE-Rモデルを実装に落とし込む論理設計以降の概念です。"},
+  {k:"D", t:"エンティティ",
+   e:"管理対象となる実体(社員・商品など)を表す中心的な構成要素です。"}
+ ], correct:["C"]},
+
+{id:37, cat:"主キー", type:"single",
+ text:"表の中の各行を一意に識別するために使う列を選びなさい",
+ explain:"キーの種類の区別を問う問題です。行を一意に識別する役割を担うのは主キー(PRIMARY KEY)で、NOT NULL+UNIQUEの性質を持ちます。",
+ options:[
+  {k:"A", t:"候補キー(CANDIDATE KEY)",
+   e:"主キーになり得る候補の列(群)です。その中から選ばれた1つが主キーになります。"},
+  {k:"B", t:"外部キー(FOREIGN KEY:REFERENCES)",
+   e:"他の表の主キーを参照して表同士を関連付けるためのキーです。"},
+  {k:"C", t:"一意キー(UNIQUE)",
+   e:"重複を禁止しますがNULLを許可でき、行の識別に「使う」と定められたキーではありません。"},
+  {k:"D", t:"主キー(PRIMARY KEY)",
+   e:"正しい。各行を一意に識別するための列で、NULLも重複も許されません。"}
+ ], correct:["D"]},
+
+{id:38, cat:"IN条件", type:"single",
+ text:"以下のWHERE句の条件と同じものを選びなさい",
+ code:"WHERE job IN('CLERK','ACCOUNT')",
+ explain:"IN(a, b)は「=a OR =b」の省略形です。ANDと書き換えてしまうと1つの列が同時に2つの値になる矛盾した条件になります。",
+ options:[
+  {k:"A", t:"WHERE job = 'CLERK' AND job = 'ACCOUNT'",
+   e:"1つの列が同時にCLERKかつACCOUNTになることはなく、常に偽の条件です。"},
+  {k:"B", t:"WHERE job BETWEEN 'CLERK' AND 'ACCOUNT'",
+   e:"BETWEENは範囲指定であり、2つの値のどちらかという意味にはなりません。"},
+  {k:"C", t:"WHERE NOT job = 'CLERK' AND NOT job = 'ACCOUNT'",
+   e:"NOT IN('CLERK','ACCOUNT')と同義で、真逆の条件です。"},
+  {k:"D", t:"WHERE job = 'CLERK' OR job = 'ACCOUNT'",
+   e:"正しい。INはORの省略形なので、この書き換えが同義です。"}
+ ], correct:["D"]},
+
+{id:39, cat:"ソート順序", type:"single",
+ text:"問合せの行の順番に関する説明として誤っているものを選びなさい",
+ explain:"ORDER BYを指定しない場合、行の返却順序は一切保証されません(格納順に見えることがあっても偶然)。順序が必要ならORDER BYが必須、というのが大原則です。",
+ options:[
+  {k:"A", t:"SQLの問合せから戻される行の順は必ずデータの格納順(作成順)である",
+   e:"誤り(=正解)。ORDER BYなしでは順序は保証されず、「必ず格納順」とは言えません。"},
+  {k:"B", t:"ORDER BY句で列別名は使用できる",
+   e:"正しい。ORDER BYはSELECT句の後に評価されるため、別名を参照できます(WHERE句との違いに注意)。"},
+  {k:"C", t:"ORDER BY句では、SELECT句で指定されていない列も指定できる",
+   e:"正しい。表示していない列でのソートも可能です(問26-Aで実際に使われています)。"},
+  {k:"D", t:"ORDER BY句のASCは昇順、DESCは降順を指し、デフォルトはASCである",
+   e:"正しい。省略時は昇順(ASC)になります。"}
+ ], correct:["A"]},
+
+{id:40, cat:"比較演算子", type:"multi",
+ text:"EMPLOYEES表のSALARY列が300000より大きい従業員を検索する条件として、正しいものはどれですか(5件まで)。",
+ explain:"「〜より大きい」は境界値300000を含みません。NOTを使った言い換えでは、否定した結果が「>300000」と完全に一致するかを境界値で検証するのがコツです。",
+ options:[
+  {k:"A", t:"WHERE salary >= 300000",
+   e:">=は300000自身を含んでしまうため、「より大きい」とは一致しません。"},
+  {k:"B", t:"WHERE NOT salary <= 300000",
+   e:"正しい。「300000以下でない」=「300000より大きい」で、論理的に完全に同義です。"},
+  {k:"C", t:"WHERE NOT salary < 300000",
+   e:"「300000未満でない」=「300000以上」となり、300000自身を含んでしまいます。"},
+  {k:"D", t:"WHERE salary < 300000",
+   e:"「300000未満」で真逆の条件です。"},
+  {k:"E", t:"WHERE salary > 300000",
+   e:"正しい。「より大きい」をそのまま表す最も直接的な書き方です。"}
+ ], correct:["B","E"]}
+];
+
+/* ===================== STATE ===================== */
+let state = {
+  screen:"start",
+  mode:"sequential",
+  order:[],
+  idx:0,
+  answers:{},
+  answered:{},
+  selection:[]
+};
+
+/* ===================== HELPERS ===================== */
+function esc(str){
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function beltFor(pct){
+  if(pct>=90) return {name:"黒帯 — 免許皆伝", bg:"#1a1a1a", fg:"#e3c583"};
+  if(pct>=75) return {name:"茶帯 — 合格圏内", bg:"#6b4a30", fg:"#f7f2e7"};
+  if(pct>=60) return {name:"緑帯 — もう少し", bg:"#4f7a4a", fg:"#f7f2e7"};
+  if(pct>=40) return {name:"黄帯 — 復習が必要", bg:"#c9a24b", fg:"#231f1c"};
+  return {name:"白帯 — 基礎から再確認", bg:"#f7f2e7", fg:"#231f1c"};
+}
+
+/* ===================== RENDER: START ===================== */
+function renderStart(){
+  document.getElementById("app").innerHTML = `
+    ${brandHtml()}
+    <div class="card">
+      <p class="start-copy">
+        <b>過去問道場</b> へようこそ。Oracle Bronze SQL基礎相当の過去問<b>全40問</b>を出題します。<br>
+        1問ずつ回答すると即座に正誤判定と<b>全選択肢の個別解説</b>が表示される、道場稽古スタイルです。
+      </p>
+      <div class="mode-row">
+        <button class="mode-btn active" data-mode="sequential">順番に解く</button>
+        <button class="mode-btn" data-mode="random">ランダム出題</button>
+      </div>
+      <button class="start-btn" id="startBtn">道場に入る</button>
+    </div>
+    <div class="footer-note">全40問 ・ 選択後は即採点 ・ 途中経過は保持されません</div>
+  `;
+  document.querySelectorAll(".mode-btn").forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll(".mode-btn").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      state.mode=b.dataset.mode;
+    };
+  });
+  document.getElementById("startBtn").onclick=()=>{
+    state.order = state.mode==="random" ? shuffle(QUESTIONS.map(q=>q.id)) : QUESTIONS.map(q=>q.id);
+    state.idx=0; state.answers={}; state.answered={}; state.selection=[];
+    state.screen="quiz";
+    renderQuiz();
+  };
+}
+
+function brandHtml(){
+  return `
+    <div class="brand">
+      <p class="kanji">過去問道場</p>
+      <p class="sub">ORACLE BRONZE SQL基礎 — 模擬問題演習</p>
+      <hr>
+    </div>`;
+}
+
+/* ===================== RENDER: QUIZ ===================== */
+function currentQ(){ return QUESTIONS.find(q=>q.id===state.order[state.idx]); }
+
+function renderQuiz(){
+  const q = currentQ();
+  const answered = !!state.answered[q.id];
+  const sel = state.answers[q.id] || [];
+  const pct = Math.round((state.idx)/state.order.length*100);
+
+  let tableHtml="";
+  if(q.table){
+    tableHtml = `<table class="qtable"><thead><tr>${q.table.headers.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${
+      q.table.rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")
+    }</tbody></table>`;
+  }
+  let codeHtml = q.code ? `<pre class="qcode">${esc(q.code)}</pre>` : "";
+
+  const optionsHtml = q.options.map(o=>{
+    const isSel = sel.includes(o.k);
+    const isCorrect = q.correct.includes(o.k);
+    let cls="opt";
+    if(isSel && !answered) cls+=" selected";
+    if(answered){
+      cls+=" answered";
+      if(isCorrect) cls+=" correct";
+      else if(isSel) cls+=" wrong";
+    }
+    const inputType = q.type==="multi" ? "checkbox" : "radio";
+    /* 回答後: 各選択肢の直下に個別解説を表示(過去問道場スタイル) */
+    const expHtml = answered
+      ? `<span class="opt-exp"><b class="${isCorrect?'judge-ok':'judge-ng'}">${isCorrect?'○':'✕'}</b> ${esc(o.e)}</span>`
+      : "";
+    return `<label class="${cls}" data-k="${o.k}">
+      <input type="${inputType}" name="opt" ${isSel?"checked":""} ${answered?"disabled":""}>
+      <span class="opt-body"><span class="k">${o.k}.</span> ${esc(o.t)}${expHtml}</span>
+    </label>`;
+  }).join("");
+
+  let stampHtml="";
+  if(answered){
+    const correctSet = q.correct.slice().sort().join(",");
+    const selSet = sel.slice().sort().join(",");
+    const isOk = correctSet===selSet;
+    stampHtml = `<div class="stamp ${isOk?'ok':''}">${isOk?'合':'否'}</div>`;
+  }
+
+  /* 冒頭ポイント解説(回答後のみ) */
+  const explainHtml = answered
+    ? `<div class="explain"><span class="exp-label">解説</span>${esc(q.explain)}</div>`
+    : "";
+
+  document.getElementById("app").innerHTML = `
+    ${brandHtml()}
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-num">${state.idx+1} / ${state.order.length}</div>
+    </div>
+    <div class="card">
+      ${stampHtml}
+      <span class="qcat">${esc(q.cat)}</span>
+      <p class="qtitle">問${q.id}. ${esc(q.text)}</p>
+      ${tableHtml}
+      ${codeHtml}
+      ${explainHtml}
+      <div class="options">${optionsHtml}</div>
+      <div class="actions">
+        ${answered
+          ? `<button class="btn btn-primary" id="nextBtn">${state.idx+1<state.order.length? "次の問題へ" : "結果を見る"}</button>`
+          : `<button class="btn btn-primary" id="submitBtn" disabled>回答する</button>`
+        }
+        <button class="btn btn-ghost" id="quitBtn">やめる</button>
+      </div>
+    </div>
+  `;
+
+  if(!answered){
+    document.querySelectorAll(".opt").forEach(el=>{
+      const inp = el.querySelector("input");
+      inp.onchange=()=>{
+        const k=el.dataset.k;
+        if(q.type==="multi"){
+          const i=state.selection.indexOf(k);
+          if(i>-1) state.selection.splice(i,1); else state.selection.push(k);
+        } else {
+          state.selection=[k];
+        }
+        state.answers[q.id]=state.selection.slice();
+        renderQuiz();
+      };
+    });
+    document.getElementById("submitBtn").disabled = sel.length===0;
+    document.getElementById("submitBtn").onclick=()=>{
+      state.answered[q.id]=true;
+      renderQuiz();
+      window.scrollTo({top:0, behavior:"smooth"});
+    };
+  } else {
+    document.getElementById("nextBtn").onclick=()=>{
+      state.selection=[];
+      if(state.idx+1<state.order.length){ state.idx++; renderQuiz(); window.scrollTo({top:0}); }
+      else { state.screen="result"; renderResult(); }
+    };
+  }
+  document.getElementById("quitBtn").onclick=()=>{
+    state.screen="start"; renderStart();
+  };
+}
+
+/* ===================== RENDER: RESULT ===================== */
+function renderResult(){
+  const total=state.order.length;
+  let correctCount=0;
+  const catStat={};
+  const missed=[];
+  state.order.forEach(id=>{
+    const q=QUESTIONS.find(x=>x.id===id);
+    const sel=(state.answers[id]||[]).slice().sort().join(",");
+    const cor=q.correct.slice().sort().join(",");
+    const ok = sel===cor;
+    if(ok) correctCount++; else missed.push(q);
+    if(!catStat[q.cat]) catStat[q.cat]={ok:0,total:0};
+    catStat[q.cat].total++;
+    if(ok) catStat[q.cat].ok++;
+  });
+  const pct=Math.round(correctCount/total*100);
+  const belt=beltFor(pct);
+
+  const catHtml = Object.entries(catStat).map(([cat,s])=>{
+    const p=Math.round(s.ok/s.total*100);
+    return `<div class="cat-row">
+      <span>${esc(cat)}</span>
+      <span class="bar"><i style="width:${p}%"></i></span>
+      <span>${s.ok}/${s.total}</span>
+    </div>`;
+  }).join("");
+
+  const missHtml = missed.length ? `
+    <div class="miss-list">
+      <p class="qtitle" style="font-size:0.9rem;">間違えた問題</p>
+      ${missed.map(q=>`<div class="miss-item" data-id="${q.id}"><span><span class="q">問${q.id}</span> ${esc(q.text.slice(0,26))}${q.text.length>26?'…':''}</span><span>復習する ›</span></div>`).join("")}
+    </div>` : `<p style="text-align:center;color:var(--sumi-soft);margin-top:20px;">全問正解です。免許皆伝!</p>`;
+
+  document.getElementById("app").innerHTML = `
+    ${brandHtml()}
+    <div class="card">
+      <p class="score-line">RESULT</p>
+      <p class="score-big">${correctCount} / ${total} 問正解</p>
+      <div class="belt-wrap">
+        <span class="belt-badge" style="background:${belt.bg};color:${belt.fg};">${belt.name}</span>
+      </div>
+      <div class="cat-list">${catHtml}</div>
+      ${missHtml}
+      <div class="actions" style="margin-top:24px;">
+        <button class="btn btn-primary" id="retryAllBtn">もう一度(全40問)</button>
+        ${missed.length? `<button class="btn btn-ghost" id="retryMissBtn">間違えた問題だけ</button>`:""}
+      </div>
+    </div>
+    <div class="footer-note">お疲れさまでした。継続は力なり。</div>
+  `;
+
+  document.getElementById("retryAllBtn").onclick=()=>{
+    state.order=QUESTIONS.map(q=>q.id);
+    if(state.mode==="random") state.order=shuffle(state.order);
+    state.idx=0; state.answers={}; state.answered={}; state.selection=[];
+    renderQuiz();
+  };
+  const rmb=document.getElementById("retryMissBtn");
+  if(rmb){
+    rmb.onclick=()=>{
+      state.order=missed.map(q=>q.id);
+      state.idx=0; state.answers={}; state.answered={}; state.selection=[];
+      renderQuiz();
+    };
+  }
+  document.querySelectorAll(".miss-item").forEach(el=>{
+    el.onclick=()=>{
+      const id=parseInt(el.dataset.id);
+      state.order=[id];
+      state.idx=0; state.answers={}; state.answered={}; state.selection=[];
+      renderQuiz();
+    };
+  });
+}
+
+/* ===================== INIT ===================== */
+renderStart();
+</script>
+</body>
+</html>
