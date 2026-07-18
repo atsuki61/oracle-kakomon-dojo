@@ -282,7 +282,7 @@
     font-size:1.7rem; font-weight:800;
     transform:rotate(-13deg) scale(2.2);
     opacity:0;
-    animation:stampIn .4s cubic-bezier(.2,1.5,.4,1) forwards;
+    animation:stampIn .75s cubic-bezier(.2,1.4,.4,1) forwards;
     pointer-events:none;
     z-index:2;
   }
@@ -1031,7 +1031,7 @@ function slowScrollTo(targetY){
   const startY = window.pageYOffset;
   const dist = endY - startY;
   if(Math.abs(dist) < 4) return;
-  const duration = Math.min(1100, Math.max(450, Math.abs(dist) * 0.9));
+  const duration = Math.min(1800, Math.max(800, Math.abs(dist) * 1.4));
   const startTime = performance.now();
   const ease = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
   function step(now){
