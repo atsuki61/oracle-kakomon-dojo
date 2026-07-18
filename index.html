@@ -219,6 +219,27 @@
     color:var(--gold-soft);
     white-space:nowrap;
   }
+  .progress-acc{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color:var(--gold-soft);
+    white-space:nowrap;
+    min-width:4.5em;
+    text-align:right;
+  }
+  .progress-acc .dim{ opacity:0.55; }
+  .score-pct{
+    text-align:center;
+    font-family:'JetBrains Mono', monospace;
+    font-size:1.05rem;
+    color:var(--sumi-soft);
+    margin:0 0 14px;
+  }
+  .score-pct b{
+    font-size:1.35rem;
+    color:var(--indigo);
+    font-weight:700;
+  }
 
   .qcat{
     display:inline-block;
@@ -472,8 +493,13 @@
     .cat-grid{ grid-template-columns:1fr; max-height:180px; }
     .cat-check{ font-size:0.78rem; }
     .opt-check{ font-size:0.82rem; }
+    .progress-wrap{ gap:8px; flex-wrap:wrap; }
+    .progress-track{ min-width:40%; flex:1 1 40%; }
+    .progress-acc{ font-size:0.72rem; min-width:0; }
 
     .score-big{ font-size:2rem; }
+    .score-pct{ font-size:0.95rem; }
+    .score-pct b{ font-size:1.2rem; }
     .belt-badge{ font-size:1.15rem; padding:8px 20px; }
     .cat-row{ font-size:0.78rem; }
     .miss-item{ font-size:0.78rem; padding:9px 10px; gap:8px; }
@@ -1173,6 +1199,23 @@ function optionsFor(q){
   const byK = Object.fromEntries(q.options.map(o=>[o.k,o]));
   return state.choiceOrder[q.id].map(k=>byK[k]);
 }
+function isQCorrect(id){
+  const q = QUESTIONS.find(x=>x.id===id);
+  if(!q || !state.answered[id]) return null;
+  const sel = (state.answers[id]||[]).slice().sort().join(",");
+  const cor = q.correct.slice().sort().join(",");
+  return sel===cor;
+}
+function runningScore(){
+  let ok=0, done=0;
+  state.order.forEach(id=>{
+    const r = isQCorrect(id);
+    if(r===null) return;
+    done++;
+    if(r) ok++;
+  });
+  return { ok, done, pct: done ? Math.round(ok/done*100) : null };
+}
 
 /* ===================== RENDER: START ===================== */
 function renderStart(){
@@ -1300,6 +1343,10 @@ function renderQuiz(){
   const answered = !!state.answered[q.id];
   const sel = state.answers[q.id] || [];
   const pct = Math.round((state.idx)/state.order.length*100);
+  const score = runningScore();
+  const accHtml = score.done
+    ? `<div class="progress-acc">${score.pct}% <span class="dim">(${score.ok}/${score.done})</span></div>`
+    : `<div class="progress-acc"><span class="dim">—%</span></div>`;
 
   let tableHtml="";
   if(q.table){
@@ -1349,6 +1396,7 @@ function renderQuiz(){
     <div class="progress-wrap">
       <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="progress-num">${state.idx+1} / ${state.order.length}</div>
+      ${accHtml}
     </div>
     <div class="card">
       ${stampHtml}
@@ -1426,7 +1474,7 @@ function renderResult(){
     return `<div class="cat-row">
       <span>${esc(cat)}</span>
       <span class="bar"><i style="width:${p}%"></i></span>
-      <span>${s.ok}/${s.total}</span>
+      <span>${p}% <span style="opacity:.55">${s.ok}/${s.total}</span></span>
     </div>`;
   }).join("");
 
@@ -1441,6 +1489,7 @@ function renderResult(){
     <div class="card">
       <p class="score-line">RESULT</p>
       <p class="score-big">${correctCount} / ${total} 問正解</p>
+      <p class="score-pct">正解率 <b>${pct}%</b></p>
       <div class="belt-wrap">
         <span class="belt-badge" style="background:${belt.bg};color:${belt.fg};">${belt.name}</span>
       </div>
